@@ -1,0 +1,79 @@
+
+{% extends 'image_generator/base.html' %}
+
+{% block content %}
+<h1 class="mb-4">Welcome, {{ user.username }}!</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h2>Generate Images</h2>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {% for i in '123'|make_list %}
+                <div class="mb-3">
+                    <label for="prompt{{ i }}" class="form-label">Prompt for image {{ i }}</label>
+                    <input type="text" class="form-control" id="prompt{{ i }}" name="prompt" placeholder="Enter prompt for image {{ i }}" required>
+                </div>
+            {% endfor %}
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Generate Images</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if task_ids %}
+    <div class="alert alert-info" role="alert">
+        <h2 class="alert-heading">Images are being generated. Please wait...</h2>
+        <div id="results"></div>
+    </div>
+{% endif %}
+
+{% if images %}
+    <h2 class="mb-3">Your Previous Images:</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for image in images %}
+            <div class="col">
+                <div class="card h-100">
+                    <img src="{{ image.image_url }}" class="card-img-top" alt="Generated Image">
+                    <div class="card-body">
+                        <h5 class="card-title">Prompt: {{ image.prompt }}</h5>
+                        <p class="card-text">Created at: {{ image.created_at }}</p>
+                        <p class="card-text">Dimensions: {{ image.width }}x{{ image.height }}</p>
+                        <p class="card-text">CFG Scale: {{ image.cfg_scale }}</p>
+                        <p class="card-text">Steps: {{ image.steps }}</p>
+                        <p class="card-text">Seed: {{ image.seed }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<script>
+    function checkTaskStatus(taskIds) {
+        fetch('/check_tasks/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({task_ids: taskIds})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.all_completed) {
+                location.reload();
+            } else {
+                setTimeout(() => checkTaskStatus(taskIds), 2000);
+            }
+        });
+    }
+
+    {% if task_ids %}
+        checkTaskStatus({{ task_ids|safe }});
+    {% endif %}
+</script>
+{% endblock %}
