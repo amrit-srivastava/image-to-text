@@ -98,8 +98,12 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
-# Stability AI API key
+# Stability AI API key (Dont push the origin key in the production)
 STABILITY_API_KEY = 'sk-OKwoAL374VlRZGdeSmDRh0z9T7YAKfEfM7pcMbhWhUbGBPO2'
+STABILITY_API_RATE_LIMIT = {
+    'max_requests': 10,  
+    'per_seconds': 60,
+}
 
 # Login URL
 LOGIN_URL = '/login/'
