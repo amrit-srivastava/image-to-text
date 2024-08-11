@@ -80,6 +80,7 @@ Follow these steps to set up the project locally:
 
 You can adjust the following settings in `text_to_image_project/settings.py`:
 
+- `STABILITY_API_KEY`: Your Stability AI API key.
 - `STABILITY_API_RATE_LIMIT`: Configure the rate limiting for API requests.
 - `CELERY_BROKER_URL`: Set the URL for your Celery broker (default is Redis).
 
