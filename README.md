@@ -7,7 +7,6 @@ This Django project utilizes the Stability AI API to generate images based on te
 - User authentication (signup, login, logout)
 - Generate up to 3 images simultaneously using text prompts
 - View history of generated images
-- Clear all generated images
 - Asynchronous image generation using Celery and Redis
 
 ## Prerequisites
@@ -76,7 +75,6 @@ Follow these steps to set up the project locally:
 2. On the home page, enter up to 3 text prompts for image generation.
 3. Click "Generate Images" to create images based on your prompts.
 4. View your generated images on the home page.
-5. Use the "Clear All Images" button to delete your image history.
 
 ## Configuration
 
