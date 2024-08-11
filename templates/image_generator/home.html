@@ -4,6 +4,15 @@
 {% block content %}
 <h1 class="mb-4">Welcome, {{ user.username }}!</h1>
 
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
 <div class="card mb-4">
     <div class="card-header">
         <h2>Generate Images</h2>
@@ -24,20 +33,17 @@
     </div>
 </div>
 
-{% if task_ids %}
-    <div class="alert alert-info" role="alert">
-        <h2 class="alert-heading">Images are being generated. Please wait...</h2>
-        <div id="results"></div>
-    </div>
-{% endif %}
-
 {% if images %}
     <h2 class="mb-3">Your Previous Images:</h2>
+    <form method="post" class="mb-3">
+        {% csrf_token %}
+        <button type="submit" name="clear_images" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete all images?')">Clear All Images</button>
+    </form>
     <div class="row row-cols-1 row-cols-md-3 g-4">
         {% for image in images %}
             <div class="col">
                 <div class="card h-100">
-                    <img src="{{ image.image_url }}" class="card-img-top" alt="Generated Image">
+                    <img src="{{ image.image_url }}" class="card-img-top" alt="{{ image.prompt }}">
                     <div class="card-body">
                         <h5 class="card-title">Prompt: {{ image.prompt }}</h5>
                         <p class="card-text">Created at: {{ image.created_at }}</p>
@@ -50,30 +56,7 @@
             </div>
         {% endfor %}
     </div>
+{% else %}
+    <p>No images generated yet.</p>
 {% endif %}
-
-<script>
-    function checkTaskStatus(taskIds) {
-        fetch('/check_tasks/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({task_ids: taskIds})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.all_completed) {
-                location.reload();
-            } else {
-                setTimeout(() => checkTaskStatus(taskIds), 2000);
-            }
-        });
-    }
-
-    {% if task_ids %}
-        checkTaskStatus({{ task_ids|safe }});
-    {% endif %}
-</script>
 {% endblock %}

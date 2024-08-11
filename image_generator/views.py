@@ -18,11 +18,13 @@ logger = logging.getLogger(__name__)
 @login_required
 def home(request):
     if request.method == 'POST':
-        prompts = request.POST.getlist('prompt')
+        prompts = request.POST.getlist('prompt')[:3]
         try:
-            task = generate_images_parallel.delay(prompts, request.user.id)
-            logger.info(f"Started image generation tasks for user {request.user.id}")
-            return render(request, 'image_generator/home.html', {'task_ids': task.get()})
+            if prompts:         
+                task = generate_images_parallel.delay(prompts, request.user.id)
+                image_urls = task.get() 
+                logger.info(f"Started image generation tasks for user {request.user.id}")
+                return render(request, 'image_generator/home.html', {'task_ids': task.get()})
         except Exception as e:
             logger.error(f"Failed to start image generation tasks for user {request.user.id}: {str(e)}")
             return render(request, 'image_generator/home.html', {'error': 'Failed to start image generation. Please try again.'})

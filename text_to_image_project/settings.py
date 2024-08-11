@@ -99,7 +99,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
 # Stability AI API key
-STABILITY_API_KEY = 'your-api-key-here'
+STABILITY_API_KEY = 'sk-OKwoAL374VlRZGdeSmDRh0z9T7YAKfEfM7pcMbhWhUbGBPO2'
 
 # Login URL
 LOGIN_URL = '/login/'
