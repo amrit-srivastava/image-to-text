@@ -1,4 +1,3 @@
-# image_generator/tasks.py
 
 import requests
 import logging
