@@ -25,7 +25,7 @@ Follow these steps to set up the project locally:
 1. Clone the repository:
    ```
    git clone https://github.com/amrit-srivastava/image-to-text.git
-   cd text-to-image-project
+   cd image-to-text
    ```
 
 2. Create and activate a virtual environment:
