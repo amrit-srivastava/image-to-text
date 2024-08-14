@@ -1,15 +1,14 @@
-
 import requests
 import logging
 import time
-from celery import shared_task
+from celery import shared_task, group
 from django.conf import settings
 from .models import GeneratedImage
 
 logger = logging.getLogger(__name__)
 
 @shared_task
-def generate_images_parallel(prompts, user_id):
+def generate_single_image(prompt, user_id):
     url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image"
     
     headers = {
@@ -19,7 +18,7 @@ def generate_images_parallel(prompts, user_id):
     }
     
     payload = {
-        "text_prompts": [{"text": prompt} for prompt in prompts[:3]],  # Limit to first 3 prompts
+        "text_prompts": [{"text": prompt}],
         "cfg_scale": 7,
         "height": 1024,
         "width": 1024,
@@ -36,26 +35,22 @@ def generate_images_parallel(prompts, user_id):
             response.raise_for_status()
             
             data = response.json()
-            results = []
+            artifact = data['artifacts'][0]
+            image_url = f"data:image/png;base64,{artifact['base64']}"
             
-            for i, artifact in enumerate(data['artifacts']):
-                image_url = f"data:image/png;base64,{artifact['base64']}"
-                
-                generated_image = GeneratedImage.objects.create(
-                    user_id=user_id,
-                    prompt=prompts[i],
-                    image_url=image_url,
-                    width=payload['width'],
-                    height=payload['height'],
-                    cfg_scale=payload['cfg_scale'],
-                    steps=payload['steps'],
-                    seed=artifact['seed']
-                )
-                
-                results.append(image_url)
-                logger.info(f"Successfully generated and stored metadata for image with prompt: {prompts[i][:30]}...")
+            generated_image = GeneratedImage.objects.create(
+                user_id=user_id,
+                prompt=prompt,
+                image_url=image_url,
+                width=payload['width'],
+                height=payload['height'],
+                cfg_scale=payload['cfg_scale'],
+                steps=payload['steps'],
+                seed=artifact['seed']
+            )
             
-            return results
+            logger.info(f"Successfully generated and stored metadata for image with prompt: {prompt[:30]}...")
+            return image_url
 
         except requests.RequestException as e:
             if response.status_code == 429:
@@ -64,14 +59,28 @@ def generate_images_parallel(prompts, user_id):
                     time.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
-                    logger.error("Max retries reached. Unable to generate images due to rate limiting.")
-                    return []
+                    logger.error("Max retries reached. Unable to generate image due to rate limiting.")
+                    return None
             else:
                 logger.error(f"API request failed: {str(e)}")
-                return []
+                return None
         except Exception as e:
             logger.error(f"Unexpected error occurred: {str(e)}")
-            return []
+            return None
 
-    logger.error("Failed to generate images after multiple attempts.")
-    return []
+    logger.error("Failed to generate image after multiple attempts.")
+    return None
+
+@shared_task
+def generate_images_parallel(prompts, user_id):
+    # Create a group of tasks, one for each prompt
+    job = group(generate_single_image.s(prompt, user_id) for prompt in prompts[:3])
+    
+    # Execute the group of tasks
+    result = job.apply_async()
+    
+    # Wait for all tasks to complete and get the results
+    image_urls = result.get()
+    
+    # Filter out any None results (failed generations)
+    return [url for url in image_urls if url is not None]

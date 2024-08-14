@@ -20,22 +20,64 @@
     <button type="submit" class="btn btn-primary">Generate Images</button>
 </form>
 
-{% if images %}
-    <h2>Your Generated Images:</h2>
-    <div class="row">
-        {% for image in images %}
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <img src="{{ image.image_url }}" class="card-img-top" alt="{{ image.prompt }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ image.prompt }}</h5>
-                        <p class="card-text">Created: {{ image.created_at }}</p>
+<div id="loading" style="display: none;">
+    <p>Generating images, please wait...</p>
+</div>
+
+<div id="imageContainer">
+    {% if images %}
+        <h2>Your Generated Images:</h2>
+        <div class="row" id="imageRow">
+            {% for image in images %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <img src="{{ image.image_url }}" class="card-img-top" alt="{{ image.prompt }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ image.prompt }}</h5>
+                            <p class="card-text">Created: {{ image.created_at }}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
-    </div>
-{% else %}
-    <p>No images generated yet.</p>
-{% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No images generated yet.</p>
+    {% endif %}
+</div>
+
+<script>
+    function checkImageStatus() {
+        fetch('/check_image_status/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.images && data.images.length > 0) {
+                    const imageRow = document.getElementById('imageRow');
+                    data.images.forEach(image => {
+                        const existingImage = document.querySelector(`img[alt="${image.prompt}"]`);
+                        if (!existingImage) {
+                            const newImageHtml = `
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <img src="${image.url}" class="card-img-top" alt="${image.prompt}">
+                                        <div class="card-body">
+                                            <h5 class="card-title">${image.prompt}</h5>
+                                            <p class="card-text">Created: ${image.created_at}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            imageRow.insertAdjacentHTML('afterbegin', newImageHtml);
+                        }
+                    });
+                    document.getElementById('loading').style.display = 'none';
+                }
+            });
+    }
+
+    setInterval(checkImageStatus, 1000);
+
+    document.querySelector('form').addEventListener('submit', function() {
+        document.getElementById('loading').style.display = 'block';
+    });
+</script>
 {% endblock %}
