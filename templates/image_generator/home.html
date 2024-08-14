@@ -1,56 +1,35 @@
-
 {% extends 'image_generator/base.html' %}
 
 {% block content %}
-<h1 class="mb-4">Welcome, {{ user.username }}!</h1>
+<h1>Welcome, {{ user.username }}!</h1>
 
 {% if messages %}
     {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
     {% endfor %}
 {% endif %}
 
-<div class="card mb-4">
-    <div class="card-header">
-        <h2>Generate Images</h2>
-    </div>
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            {% for i in '123'|make_list %}
-                <div class="mb-3">
-                    <label for="prompt{{ i }}" class="form-label">Prompt for image {{ i }}</label>
-                    <input type="text" class="form-control" id="prompt{{ i }}" name="prompt" placeholder="Enter prompt for image {{ i }}" required>
-                </div>
-            {% endfor %}
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary">Generate Images</button>
-            </div>
-        </form>
-    </div>
-</div>
+<form method="post">
+    {% csrf_token %}
+    {% for i in '123'|make_list %}
+        <div class="form-group">
+            <label for="prompt{{ i }}">Prompt {{ i }}:</label>
+            <input type="text" name="prompt" id="prompt{{ i }}" class="form-control" required>
+        </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Generate Images</button>
+</form>
 
 {% if images %}
-    <h2 class="mb-3">Your Previous Images:</h2>
-    <form method="post" class="mb-3">
-        {% csrf_token %}
-        <button type="submit" name="clear_images" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete all images?')">Clear All Images</button>
-    </form>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+    <h2>Your Generated Images:</h2>
+    <div class="row">
         {% for image in images %}
-            <div class="col">
-                <div class="card h-100">
+            <div class="col-md-4 mb-3">
+                <div class="card">
                     <img src="{{ image.image_url }}" class="card-img-top" alt="{{ image.prompt }}">
                     <div class="card-body">
-                        <h5 class="card-title">Prompt: {{ image.prompt }}</h5>
-                        <p class="card-text">Created at: {{ image.created_at }}</p>
-                        <p class="card-text">Dimensions: {{ image.width }}x{{ image.height }}</p>
-                        <p class="card-text">CFG Scale: {{ image.cfg_scale }}</p>
-                        <p class="card-text">Steps: {{ image.steps }}</p>
-                        <p class="card-text">Seed: {{ image.seed }}</p>
+                        <h5 class="card-title">{{ image.prompt }}</h5>
+                        <p class="card-text">Created: {{ image.created_at }}</p>
                     </div>
                 </div>
             </div>

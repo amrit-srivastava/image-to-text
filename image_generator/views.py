@@ -19,22 +19,28 @@ logger = logging.getLogger(__name__)
 def home(request):
     if request.method == 'POST':
         prompts = request.POST.getlist('prompt')[:3]
-        try:
-            if prompts:         
+        if prompts:
+            try:
                 task = generate_images_parallel.delay(prompts, request.user.id)
-                image_urls = task.get() 
-                logger.info(f"Started image generation tasks for user {request.user.id}")
-                return render(request, 'image_generator/home.html', {'task_ids': task.get()})
-        except Exception as e:
-            logger.error(f"Failed to start image generation tasks for user {request.user.id}: {str(e)}")
-            return render(request, 'image_generator/home.html', {'error': 'Failed to start image generation. Please try again.'})
+                image_urls = task.get()  # This waits for the task to complete
+                logger.info(f"Generated images for user {request.user.id}: {image_urls}")
+                messages.success(request, f"Successfully generated {len(image_urls)} images.")
+                return redirect('home')  # Redirect to reload the page and show new images
+            except Exception as e:
+                logger.error(f"Failed to generate images for user {request.user.id}: {str(e)}")
+                messages.error(request, 'Failed to generate images. Please try again.')
+                return redirect('home')
     
+    # For both GET and POST (after redirect)
     try:
         images = GeneratedImage.objects.filter(user=request.user).order_by('-created_at')
+        for image in images:
+            logger.debug(f"Image ID: {image.id}, URL prefix: {image.image_url[:30]}...")
         return render(request, 'image_generator/home.html', {'images': images})
     except Exception as e:
         logger.error(f"Failed to retrieve images for user {request.user.id}: {str(e)}")
-        return render(request, 'image_generator/home.html', {'error': 'Failed to retrieve your images. Please try again.'})
+        messages.error(request, 'Failed to retrieve your images. Please try again.')
+        return render(request, 'image_generator/home.html', {'images': []})
 
 @login_required
 def check_tasks(request):

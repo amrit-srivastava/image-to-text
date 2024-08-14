@@ -17,3 +17,4 @@ class GeneratedImage(models.Model):
     
     def __str__(self):
         return f"Image for {self.user.username}: {self.prompt[:30]}..."
+    
